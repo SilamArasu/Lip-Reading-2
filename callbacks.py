@@ -88,7 +88,8 @@ class Statistics(keras.callbacks.Callback):
 
 class Visualize(keras.callbacks.Callback):
 
-    def __init__(self, output_dir, model_container, generator, decoder, num_display_sentences=10):
+    # def __init__(self, output_dir, model_container, generator, decoder, num_display_sentences=10):
+    def __init__(self, model_container, generator, decoder, num_display_sentences=10, output_dir=None):
         self.model_container = model_container
         self.output_dir = output_dir
         self.generator = generator

@@ -56,10 +56,15 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
     decoder = Decoder(greedy=PREDICT_GREEDY, beam_width=PREDICT_BEAM_WIDTH,
                       postprocessors=[labels_to_text, spell.sentence])
 
+    try:
+        os.makedirs(os.path.join(LOG_DIR, run_name), exist_ok=True)
+    except:
+        pass
+
     # define callbacks
     statistics  = Statistics(lipnet, lip_gen.next_val(), decoder, 256, output_dir=os.path.join(OUTPUT_DIR, run_name))
-    visualize   = Visualize(os.path.join(OUTPUT_DIR, run_name), lipnet, lip_gen.next_val(), decoder, num_display_sentences=minibatch_size)
-    tensorboard = TensorBoard(log_dir=os.path.join(LOG_DIR, run_name))
+    visualize   =  Visualize(lipnet, lip_gen.next_val(), decoder, minibatch_size, output_dir=os.path.join(OUTPUT_DIR, run_name))
+    # tensorboard = TensorBoard(log_dir=os.path.join(LOG_DIR, run_name))
     csv_logger  = CSVLogger(os.path.join(LOG_DIR, "{}-{}.csv".format('training',run_name)), separator=',', append=True)
     checkpoint  = ModelCheckpoint(os.path.join(OUTPUT_DIR, run_name, "weights{epoch:02d}.h5"), monitor='val_loss', save_weights_only=True, mode='auto', period=1)
 
@@ -75,4 +80,4 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 
 if __name__ == '__main__':
     run_name = datetime.datetime.now().strftime('%Y:%m:%d:%H:%M:%S')
-    train(run_name, 0, 2, 3, 100, 50, 75, 32, 2)
+    train(run_name, 0, 5000, 3, 100, 50, 75, 32, 50)
