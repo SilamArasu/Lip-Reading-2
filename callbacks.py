@@ -6,14 +6,16 @@ import keras
 import csv
 import os
 
-class Statistics(keras.callbacks.Callback):
+class Metrics(keras.callbacks.Callback):
 
-    def __init__(self, model_container, generator, decoder, num_samples_stats=256, output_dir=None):
+    def __init__(self, model_container, generator, decoder, num_samples_stats, num_display_sentences, output_dir=None):
         self.model_container = model_container
         self.output_dir = output_dir
         self.generator = generator
         self.num_samples_stats = num_samples_stats
+        self.num_display_sentences = num_display_sentences
         self.decoder = decoder
+        print("output directory is ",output_dir)
         if output_dir is not None and not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
@@ -85,20 +87,7 @@ class Statistics(keras.callbacks.Callback):
                                "{0:.5f}".format(stats['wer'][0]), "{0:.5f}".format(stats['wer'][1]),
                                "{0:.5f}".format(stats['bleu'][0]), "{0:.5f}".format(stats['bleu'][1])])
 
-
-class Visualize(keras.callbacks.Callback):
-
-    # def __init__(self, output_dir, model_container, generator, decoder, num_display_sentences=10):
-    def __init__(self, model_container, generator, decoder, num_display_sentences=10, output_dir=None):
-        self.model_container = model_container
-        self.output_dir = output_dir
-        self.generator = generator
-        self.num_display_sentences = num_display_sentences
-        self.decoder = decoder
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-    def on_epoch_end(self, epoch, logs={}):
+        #visualize
         output_batch = next(self.generator)[0]
 
         y_pred       = self.model_container.predict(output_batch['the_input'][0:self.num_display_sentences])

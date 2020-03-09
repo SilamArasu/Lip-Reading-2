@@ -7,7 +7,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, CSVLogger, ModelCheckpoint
 from generators import BasicGenerator
-from callbacks import Statistics, Visualize
+from callbacks import Metrics
 from curriculums import Curriculum
 from decoders import Decoder
 from helpers import labels_to_text
@@ -62,8 +62,9 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
         pass
 
     # define callbacks
-    statistics  = Statistics(lipnet, lip_gen.next_val(), decoder, 256, output_dir=os.path.join(OUTPUT_DIR, run_name))
-    visualize   =  Visualize(lipnet, lip_gen.next_val(), decoder, minibatch_size, output_dir=os.path.join(OUTPUT_DIR, run_name))
+                    # model_container, generator,          decoder, num_samples_stats=256, num_display_sentences=10, output_dir=None
+    metrics  = Metrics(lipnet, lip_gen.next_val(), decoder, 256, minibatch_size, os.path.join(OUTPUT_DIR, run_name))
+    # visualize   =  Visualize(lipnet, lip_gen.next_val(), decoder, minibatch_size, output_dir=os.path.join(OUTPUT_DIR, run_name))
     # tensorboard = TensorBoard(log_dir=os.path.join(LOG_DIR, run_name))
     csv_logger  = CSVLogger(os.path.join(LOG_DIR, "{}-{}.csv".format('training',run_name)), separator=',', append=True)
     checkpoint  = ModelCheckpoint(os.path.join(OUTPUT_DIR, run_name, "weights{epoch:02d}.h5"), monitor='val_loss', save_weights_only=True, mode='auto', period=1)
@@ -71,7 +72,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
     lipnet.model.fit_generator(generator=lip_gen.next_train(),
                         steps_per_epoch=lip_gen.default_training_steps, epochs=stop_epoch,
                         validation_data=lip_gen.next_val(), validation_steps=lip_gen.default_validation_steps,
-                        callbacks=[checkpoint, statistics, visualize, lip_gen, tensorboard, csv_logger],
+                        callbacks=[checkpoint, metrics, lip_gen, csv_logger],
                         initial_epoch=start_epoch,
                         verbose=1,
                         max_q_size=5,
@@ -80,4 +81,8 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 
 if __name__ == '__main__':
     run_name = datetime.datetime.now().strftime('%Y:%m:%d:%H:%M:%S')
-    train(run_name, 0, 5000, 3, 100, 50, 75, 32, 50)
+    # for testing in laptop
+    train(run_name, 0, 2, 3, 100, 50, 75, 32, 2)
+    # for real training
+    # train(run_name, 0, 5000, 3, 100, 50, 75, 32, 50)
+    print("Training finished")
