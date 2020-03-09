@@ -10,7 +10,7 @@ from generators import BasicGenerator
 from callbacks import Metrics
 from curriculums import Curriculum
 from decoders import Decoder
-from helpers import labels_to_text
+#from helpers import labels_to_text
 from spell import Spell
 from model import LipNet
 import numpy as np
@@ -25,6 +25,16 @@ LOG_DIR      = os.path.join(CURRENT_PATH, 'logs')
 PREDICT_GREEDY      = False
 PREDICT_BEAM_WIDTH  = 200
 PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
+
+def labels_to_text(labels):
+    # 26 is space, 27 is CTC blank char
+    text = ''
+    for c in labels:
+        if c >= 0 and c < 26:
+            text += chr(c + ord('a'))
+        elif c == 26:
+            text += ' '
+    return text
 
 def curriculum_rules(epoch):
     return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }

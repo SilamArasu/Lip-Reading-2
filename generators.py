@@ -2,7 +2,7 @@ import sys, os
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, CURRENT_PATH)
 
-from helpers import text_to_labels
+#from helpers import text_to_labels
 from videos import Video
 from aligns import Align
 from keras import backend as K
@@ -40,6 +40,16 @@ def get_list_safe(l, index, size):
     while size - len(ret) > 0:
         ret += l[0:size - len(ret)]
     return ret
+
+def text_to_labels(text):
+    ret = []
+    for char in text:
+        if char >= 'a' and char <= 'z':
+            ret.append(ord(char) - ord('a'))
+        elif char == ' ':
+            ret.append(26)
+    return ret
+
 
 # datasets/[train|val]/<sid>/<id>/<image>.png
 # or datasets/[train|val]/<sid>/<id>.mpg
