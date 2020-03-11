@@ -30,3 +30,4 @@ class Curriculum(object):
     def __str__(self):
         return "{}(train: {}, sentence_length: {}, flip_probability: {}, jitter_probability: {})"\
             .format(self.__class__.__name__, self.train, self.sentence_length, self.flip_probability, self.jitter_probability)
+    
