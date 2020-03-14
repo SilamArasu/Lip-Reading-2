@@ -26,7 +26,7 @@ PREDICT_GREEDY      = False
 PREDICT_BEAM_WIDTH  = 200
 PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
 
-def labels_to_text(labels):
+def ascii_to_text(labels):
     # 26 is space, 27 is CTC blank char
     text = ''
     for c in labels:
@@ -64,7 +64,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 
     spell = Spell(path=PREDICT_DICTIONARY)
     decoder = Decoder(greedy=PREDICT_GREEDY, beam_width=PREDICT_BEAM_WIDTH,
-                      postprocessors=[labels_to_text, spell.sentence])
+                      postprocessors=[ascii_to_text, spell.sentence])
 
     try:
         os.makedirs(os.path.join(LOG_DIR, run_name), exist_ok=True)
@@ -73,7 +73,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 
     # define callbacks
                     # model_container, generator,          decoder, num_samples_stats=256, num_display_sentences=10, output_dir=None
-    metrics  = Metrics(lipnet, lip_gen.next_val(), decoder, 256, minibatch_size, os.path.join(OUTPUT_DIR, run_name))
+    metrics  = Metrics(lipnet, lip_gen.next_val(), decoder, 100, minibatch_size, os.path.join(OUTPUT_DIR, run_name))
     # visualize   =  Visualize(lipnet, lip_gen.next_val(), decoder, minibatch_size, output_dir=os.path.join(OUTPUT_DIR, run_name))
     # tensorboard = TensorBoard(log_dir=os.path.join(LOG_DIR, run_name))
     csv_logger  = CSVLogger(os.path.join(LOG_DIR, "{}-{}.csv".format('training',run_name)), separator=',', append=True)
@@ -92,9 +92,9 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 if __name__ == '__main__':
     run_name = datetime.datetime.now().strftime('%Y:%m:%d:%H:%M:%S')
     # for testing in laptop
-    train(run_name, 0, 2, 3, 100, 50, 75, 32,28, 2)
+    # train(run_name, 0, 2, 3, 100, 50, 75, 32,28, 2)
     # for real training
-    # train(run_name, 0, 5000, 3, 100, 50, 75, 32,28, 50)
+    train(run_name, 0, 10, 3, 100, 50, 75, 32,28, 50)
     # absolute_max_string_len = 32 coz the max length of sentence spoken(in align) is 31
     # output_size = 28 coz average len sentence 24. Rounding to 28
     print("Training finished")

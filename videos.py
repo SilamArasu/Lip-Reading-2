@@ -203,12 +203,12 @@ class Video(object):
         data_frames = []
         for frame in frames:
             frame = frame.swapaxes(0,1) # swap width and height to form format W x H x C
-            if len(frame.shape) < 3:
+            if len(frame.shape) < 3: # Remove this at the end coz the frames are color by default
                 frame = np.array([frame]).swapaxes(0,2).swapaxes(0,1) # Add grayscale channel
             data_frames.append(frame)
         frames_n = len(data_frames)
         data_frames = np.array(data_frames) # T x W x H x C
-        if K.image_data_format() == 'channels_first':
-            data_frames = np.rollaxis(data_frames, 3) # C x T x W x H
+        # if K.image_data_format() == 'channels_first':
+        #     data_frames = np.rollaxis(data_frames, 3) # C x T x W x H
         self.data = data_frames
         self.length = frames_n

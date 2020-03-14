@@ -33,13 +33,13 @@ class Align(object):
         self.sentence = self.sentence.replace('sp','')
         self.sentence = self.sentence.replace('sil','')
         self.sentence = self.sentence.strip()
-        print("Sentence ",self.sentence)
+        # print("Sentence ",self.sentence)
         self.label = text_to_ascii(self.sentence)
         self.padded_label = self.get_padded_label(self.label)
 
     def get_padded_label(self, label):
-        print("Absolute max string length ",self.absolute_max_string_len)
-        print("length label ",len(label))
+        # print("Absolute max string length ",self.absolute_max_string_len)
+        # print("length label ",len(label))
         padding = np.ones((self.absolute_max_string_len-len(label))) * -1
         return np.concatenate((np.array(label), padding), axis=0)
 
