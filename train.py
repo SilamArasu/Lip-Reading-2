@@ -26,15 +26,6 @@ PREDICT_GREEDY      = False
 PREDICT_BEAM_WIDTH  = 200
 PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
 
-def ascii_to_text(labels):
-    # 26 is space, 27 is CTC blank char
-    text = ''
-    for c in labels:
-        if c >= 0 and c < 26:
-            text += chr(c + ord('a'))
-        elif c == 26:
-            text += ' '
-    return text
 
 def curriculum_rules(epoch):
     return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }
@@ -63,8 +54,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
         lipnet.model.load_weights(weight_file)
 
     spell = Spell(path=PREDICT_DICTIONARY)
-    decoder = Decoder(greedy=PREDICT_GREEDY, beam_width=PREDICT_BEAM_WIDTH,
-                      postprocessors=[ascii_to_text, spell.sentence])
+    decoder = Decoder(greedy=PREDICT_GREEDY, beam_width=PREDICT_BEAM_WIDTH)
 
     try:
         os.makedirs(os.path.join(LOG_DIR, run_name), exist_ok=True)
