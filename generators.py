@@ -35,30 +35,21 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-def get_list_safe(l, index, size):
+def get_list(l, index, size):
     ret = l[index:index+size]
     while size - len(ret) > 0:
-        ret += l[0:size - len(ret)]
+        ret += l[0:size - len(ret)] # It goes circular
     return ret
 
-def text_to_labels(text):
-    ret = []
-    for char in text:
-        if char >= 'a' and char <= 'z':
-            ret.append(ord(char) - ord('a'))
-        elif char == ' ':
-            ret.append(26)
-    return ret
 
 
 # datasets/[train|val]/<sid>/<id>/<image>.png
 # or datasets/[train|val]/<sid>/<id>.mpg
 # datasets/align/<id>.align
 class BasicGenerator(keras.callbacks.Callback):
-    def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=30, **kwargs):
+    def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=32, **kwargs):
         self.dataset_path   = dataset_path
         self.minibatch_size = minibatch_size
-        self.blank_label    = self.get_output_size() - 1
         self.img_c          = img_c
         self.img_w          = img_w
         self.img_h          = img_h
@@ -67,11 +58,10 @@ class BasicGenerator(keras.callbacks.Callback):
         self.cur_train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
         self.cur_val_index   = multiprocessing.Value('i', 0)
         self.curriculum      = kwargs.get('curriculum', None)
-        self.random_seed     = kwargs.get('random_seed', 13)
-        self.vtype               = kwargs.get('vtype', 'mouth')
-        self.face_predictor_path = kwargs.get('face_predictor_path', None)
-        self.steps_per_epoch     = kwargs.get('steps_per_epoch', None)
-        self.validation_steps    = kwargs.get('validation_steps', None)
+        self.random_seed     = 17
+        # self.vtype               = kwargs.get('vtype', 'mouth')
+        # self.steps_per_epoch     = kwargs.get('steps_per_epoch', None)
+        # self.validation_steps    = kwargs.get('validation_steps', None)
         # Process epoch is used by non-training generator (e.g: validation)
         # because each epoch uses different validation data enqueuer
         # Will be updated on epoch_begin
@@ -92,8 +82,9 @@ class BasicGenerator(keras.callbacks.Callback):
         self.align_path     = os.path.join(self.dataset_path, 'align')
         self.build_dataset()
         # Set steps to dataset size if not set
-        self.steps_per_epoch  = self.default_training_steps if self.steps_per_epoch is None else self.steps_per_epoch
-        self.validation_steps = self.default_validation_steps if self.validation_steps is None else self.validation_steps
+        self.steps_per_epoch  = self.default_training_steps 
+        # if self.steps_per_epoch is None else self.steps_per_epoch
+        # self.validation_steps = self.default_validation_steps if self.validation_steps is None else self.validation_steps
         return self
 
     @property
@@ -112,49 +103,31 @@ class BasicGenerator(keras.callbacks.Callback):
     def default_validation_steps(self):
         return self.validation_size / self.minibatch_size
 
-    def get_output_size(self):
-        return 28
-
-    def get_cache_path(self):
-        return self.dataset_path.rstrip('/') + '.cache'
-
-    def enumerate_videos(self, path):
+    def prepare_vidlist(self, path):
         video_list = []
+        l = None
         for video_path in glob.glob(path):
-            try:
-                if os.path.isfile(video_path):
-                    video = Video(self.vtype, self.face_predictor_path).from_video(video_path)
-                else:
-                    video = Video(self.vtype, self.face_predictor_path).from_frames(video_path)
-            except AttributeError as err:
-                raise err
-            except:
-                print("Error loading video: "+video_path)
-                continue
-            if K.image_data_format() == 'channels_first' and video.data.shape != (self.img_c,self.frames_n,self.img_w,self.img_h):
-                print("Video "+video_path+" has incorrect shape "+str(video.data.shape)+", must be "+str((self.img_c,self.frames_n,self.img_w,self.img_h))+"")
-                continue
-            if K.image_data_format() != 'channels_first' and video.data.shape != (self.frames_n,self.img_w,self.img_h,self.img_c):
-                print("Video "+video_path+" has incorrect shape "+str(video.data.shape)+", must be "+str((self.frames_n,self.img_w,self.img_h,self.img_c))+"")
-                continue
-            video_list.append(video_path)
+            l = len(os.listdir(video_path))
+            if l == 75:
+                video_list.append(video_path)
+            else:
+                print("Error loading video: "+video_path+" less than 75 frames("+str(l)+")")
+
         return video_list
 
-    def enumerate_align_hash(self, video_list):
-        align_hash = {}
+    def prepare_align(self, video_list):
+        align_dict = {}
         for video_path in video_list:
             video_id = os.path.splitext(video_path)[0].split('/')[-1]
             align_path = os.path.join(self.align_path, video_id)+".align"
-            align_hash[video_id] = Align(self.absolute_max_string_len, text_to_labels).from_file(align_path)
-        return align_hash
+            align_dict[video_id] = Align(self.absolute_max_string_len).from_file(align_path)
+        return align_dict
 
     def build_dataset(self):
-        print("\nEnumerating dataset list from disk...")
-        self.train_list = self.enumerate_videos(os.path.join(self.train_path, '*', '*'))
-        self.val_list   = self.enumerate_videos(os.path.join(self.val_path, '*', '*'))
-        self.align_hash = self.enumerate_align_hash(self.train_list + self.val_list)
-        #with open(self.get_cache_path(), 'wb') as fp:
-        #    pickle.dump((self.train_list, self.val_list, self.align_hash), fp)
+        print("\nLoading datas...")
+        self.train_list = self.prepare_vidlist(os.path.join(self.train_path, '*', '*'))
+        self.val_list   = self.prepare_vidlist(os.path.join(self.val_path, '*', '*'))
+        self.align_dict = self.prepare_align(self.train_list + self.val_list)
 
         print("Found {} videos for training.".format(self.training_size))
         print("Found {} videos for validation.".format(self.validation_size))
@@ -162,16 +135,13 @@ class BasicGenerator(keras.callbacks.Callback):
 
         np.random.shuffle(self.train_list)
 
-    def get_align(self, _id):
-        return self.align_hash[_id]
-
     def get_batch(self, index, size, train):
         if train:
             video_list = self.train_list
         else:
             video_list = self.val_list
 
-        X_data_path = get_list_safe(video_list, index, size)
+        X_data_path = get_list(video_list, index, size)
         X_data = []
         Y_data = []
         label_length = []
@@ -179,7 +149,7 @@ class BasicGenerator(keras.callbacks.Callback):
         source_str = []
         for path in X_data_path:
             video = Video().from_frames(path)
-            align = self.get_align(path.split('/')[-1])
+            align = self.align_dict[path.split('/')[-1]]
             video_unpadded_length = video.length
             if self.curriculum is not None:
                 video, align, video_unpadded_length = self.curriculum.apply(video, align)
@@ -202,7 +172,7 @@ class BasicGenerator(keras.callbacks.Callback):
                   'label_length': label_length,
                   'source_str': source_str  # used for visualization only
                   }
-        outputs = {'ctc': np.zeros([size])}  # dummy data for dummy loss function
+        outputs = {'ctc': np.zeros([size])}  # dummy data for dummy loss function coz while training in forward ctc is zero
 
         return (inputs, outputs)
 

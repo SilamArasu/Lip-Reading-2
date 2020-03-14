@@ -40,7 +40,7 @@ def curriculum_rules(epoch):
     return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }
 
 
-def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, absolute_max_string_len, minibatch_size):
+def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, absolute_max_string_len, output_size,minibatch_size):
     curriculum = Curriculum(curriculum_rules)
     lip_gen = BasicGenerator(dataset_path=DATASET_DIR,
                                 minibatch_size=minibatch_size,
@@ -49,7 +49,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
                                 curriculum=curriculum, start_epoch=start_epoch).build()
 
     lipnet = LipNet(img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
-                            absolute_max_string_len=absolute_max_string_len, output_size=lip_gen.get_output_size())
+                            absolute_max_string_len=absolute_max_string_len, output_size=output_size)
     lipnet.summary()
 
     adam = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
@@ -92,7 +92,9 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
 if __name__ == '__main__':
     run_name = datetime.datetime.now().strftime('%Y:%m:%d:%H:%M:%S')
     # for testing in laptop
-    train(run_name, 0, 2, 3, 100, 50, 75, 32, 2)
+    train(run_name, 0, 2, 3, 100, 50, 75, 32,28, 2)
     # for real training
-    # train(run_name, 0, 5000, 3, 100, 50, 75, 32, 50)
+    # train(run_name, 0, 5000, 3, 100, 50, 75, 32,28, 50)
+    # absolute_max_string_len = 32 coz the max length of sentence spoken(in align) is 31
+    # output_size = 28 coz average len sentence 24. Rounding to 28
     print("Training finished")

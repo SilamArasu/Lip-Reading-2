@@ -27,6 +27,7 @@ def CTC(name, args):
 
 class LipNet(object):
     def __init__(self, img_c=3, img_w=100, img_h=50, frames_n=75, absolute_max_string_len=32, output_size=28):
+        # refers statistics/align_analysis.py why 28 is choosen as the min output size
         self.img_c = img_c
         self.img_w = img_w
         self.img_h = img_h

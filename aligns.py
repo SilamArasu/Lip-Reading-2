@@ -1,8 +1,18 @@
 import numpy as np
 
+lines = None
+
+def text_to_ascii(text):
+    ret = []
+    for char in text:
+        if char >= 'a' and char <= 'z':
+            ret.append(ord(char) - ord('a'))
+        elif char == ' ':
+            ret.append(26)
+    return ret
+
 class Align(object):
-    def __init__(self, absolute_max_string_len=32, label_func=None):
-        self.label_func = label_func
+    def __init__(self, absolute_max_string_len=32):
         self.absolute_max_string_len = absolute_max_string_len
 
     def from_file(self, path):
@@ -17,21 +27,19 @@ class Align(object):
         return self
 
     def build(self, align):
-        self.align = self.strip(align, ['sp','sil'])
-        self.sentence = self.get_sentence(align)
-        self.label = self.get_label(self.sentence)
+        rem = ['sp','sil'] # Remove these
+        # self.align = [sub for sub in align if sub[2] not in rem]
+        self.sentence = " ".join([y[-1] for y in align ])
+        self.sentence = self.sentence.replace('sp','')
+        self.sentence = self.sentence.replace('sil','')
+        self.sentence = self.sentence.strip()
+        print("Sentence ",self.sentence)
+        self.label = text_to_ascii(self.sentence)
         self.padded_label = self.get_padded_label(self.label)
 
-    def strip(self, align, items):
-        return [sub for sub in align if sub[2] not in items]
-
-    def get_sentence(self, align):
-        return " ".join([y[-1] for y in align if y[-1] not in ['sp', 'sil']])
-
-    def get_label(self, sentence):
-        return self.label_func(sentence)
-
     def get_padded_label(self, label):
+        print("Absolute max string length ",self.absolute_max_string_len)
+        print("length label ",len(label))
         padding = np.ones((self.absolute_max_string_len-len(label))) * -1
         return np.concatenate((np.array(label), padding), axis=0)
 
