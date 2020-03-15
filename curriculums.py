@@ -33,7 +33,11 @@ class Curriculum(object):
                 video = VideoAugmenter.horizontal_flip(video)
             video = VideoAugmenter.temporal_jitter(video, self.jitter_probability)
         video_unpadded_length = video.length
-        video = VideoAugmenter.pad(video, original_video.length)
+        # t1 = video
+        if video.length != original_video.length:
+          video = VideoAugmenter.pad(video, original_video.length)
+        # t2 = video
+        # print("before = {}, after = {}".format(type(t1),type(t2)))
         return video, align, video_unpadded_length
 
     def __str__(self):

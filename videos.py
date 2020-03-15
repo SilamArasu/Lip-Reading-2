@@ -16,14 +16,14 @@ class VideoAugmenter(object):
     #     video_aligns = []
     #     for sub in align.align:
     #         # Create new video
-    #         _video = Video(video.vtype, video.face_predictor_path)
-    #         _video.face = video.face[sub[0]:sub[1]]
-    #         _video.mouth = video.mouth[sub[0]:sub[1]]
-    #         _video.set_data(_video.mouth)
+    #         new_video = Video(video.vtype, video.face_predictor_path)
+    #         new_video.face = video.face[sub[0]:sub[1]]
+    #         new_video.mouth = video.mouth[sub[0]:sub[1]]
+    #         new_video.set_data(new_video.mouth)
     #         # Create new align
     #         _align = Align(align.absolute_max_string_len, align.label_func).from_array([(0, sub[1]-sub[0], sub[2])])
     #         # Append
-    #         video_aligns.append((_video, _align))
+    #         video_aligns.append((new_video, _align))
     #     return video_aligns
 
     # @staticmethod
@@ -35,9 +35,9 @@ class VideoAugmenter(object):
     #     video.mouth = np.ones((0, vsample.mouth.shape[1], vsample.mouth.shape[2], vsample.mouth.shape[3]), dtype=np.uint8)
     #     align = []
     #     inc = 0
-    #     for _video, _align in video_aligns:
-    #         video.face = np.concatenate((video.face, _video.face), 0)
-    #         video.mouth = np.concatenate((video.mouth, _video.mouth), 0)
+    #     for new_video, _align in video_aligns:
+    #         video.face = np.concatenate((video.face, new_video.face), 0)
+    #         video.mouth = np.concatenate((video.mouth, new_video.mouth), 0)
     #         for sub in _align.align:
     #             _sub = (sub[0]+inc, sub[1]+inc, sub[2])
     #             align.append(_sub)
@@ -62,11 +62,11 @@ class VideoAugmenter(object):
 
     @staticmethod
     def horizontal_flip(video):
-        _video = Video(video.vtype, video.face_predictor_path)
-        _video.face = np.flip(video.face, 2)
-        _video.mouth = np.flip(video.mouth, 2)
-        _video.set_data(_video.mouth)
-        return _video
+        new_video = Video(video.vtype, video.face_predictor_path)
+        new_video.face = np.flip(video.face, 2)
+        new_video.mouth = np.flip(video.mouth, 2)
+        new_video.set_data(new_video.mouth)
+        return new_video
 
     @staticmethod
     def temporal_jitter(video, probability):
@@ -77,36 +77,43 @@ class VideoAugmenter(object):
                 changes.append((i, 'del'))
             if probability/2 < np.random.ranf() <= probability:
                 changes.append((i, 'dup'))
-        _face = np.copy(video.face)
-        _mouth = np.copy(video.mouth)
-        j = 0
+        new_face = np.copy(video.face)
+        new_mouth = np.copy(video.mouth)
+        pos = 0
         for change in changes:
-            _change = change[0] + j
+            actual_pos = change[0] + pos
             if change[1] == 'dup':
-                _face = np.insert(_face, _change, _face[_change], 0)
-                _mouth = np.insert(_mouth, _change, _mouth[_change], 0)
-                j = j + 1
+                new_face = np.insert(new_face, actual_pos, new_face[actual_pos], 0)
+                new_mouth = np.insert(new_mouth, actual_pos, new_mouth[actual_pos], 0)
+                pos = pos + 1
             else:
-                _face = np.delete(_face, _change, 0)
-                _mouth = np.delete(_mouth, _change, 0)
-                j = j - 1
-        _video = Video(video.vtype, video.face_predictor_path)
-        _video.face = _face
-        _video.mouth = _mouth
-        _video.set_data(_video.mouth)
-        return _video
+                new_face = np.delete(new_face, actual_pos, 0)
+                new_mouth = np.delete(new_mouth, actual_pos, 0)
+                pos = pos - 1
+        new_video = Video(video.vtype, video.face_predictor_path)
+        new_video.face = new_face
+        new_video.mouth = new_mouth
+        new_video.set_data(new_video.mouth)
+        return new_video
 
     @staticmethod
     def pad(video, length):
         pad_length = max(length - video.length, 0)
+        # if pad_length == 0:
+        #     # print("--------------")
+        #     # print("Here pad = 0, video type ",type(video))
+        #     return video
+        # else:
+        #     print("--------------")
+        #     print("Here pad = 0, video type ",type(video))
         video_length = min(length, video.length)
-        face_padding = np.ones((pad_length, video.face.shape[1], video.face.shape[2], video.face.shape[3]), dtype=np.uint8) * 0
-        mouth_padding = np.ones((pad_length, video.mouth.shape[1], video.mouth.shape[2], video.mouth.shape[3]), dtype=np.uint8) * 0
-        _video = Video(video.vtype, video.face_predictor_path)
-        _video.face = np.concatenate((video.face[0:video_length], face_padding), 0)
-        _video.mouth = np.concatenate((video.mouth[0:video_length], mouth_padding), 0)
-        _video.set_data(_video.mouth)
-        return _video
+        face_padding = np.zeros((pad_length, video.face.shape[1], video.face.shape[2], video.face.shape[3]), dtype=np.uint8)
+        mouth_padding = np.zeros((pad_length, video.mouth.shape[1], video.mouth.shape[2], video.mouth.shape[3]), dtype=np.uint8)
+        new_video = Video(video.vtype, video.face_predictor_path)
+        new_video.face = np.concatenate((video.face[0:video_length], face_padding), 0)
+        new_video.mouth = np.concatenate((video.mouth[0:video_length], mouth_padding), 0)
+        new_video.set_data(new_video.mouth)
+        return new_video
 
 
 class Video(object):
