@@ -11,51 +11,54 @@ import dlib
 from aligns import Align
 
 class VideoAugmenter(object):
-    @staticmethod
-    def split_words(video, align):
-        video_aligns = []
-        for sub in align.align:
-            # Create new video
-            _video = Video(video.vtype, video.face_predictor_path)
-            _video.face = video.face[sub[0]:sub[1]]
-            _video.mouth = video.mouth[sub[0]:sub[1]]
-            _video.set_data(_video.mouth)
-            # Create new align
-            _align = Align(align.absolute_max_string_len, align.label_func).from_array([(0, sub[1]-sub[0], sub[2])])
-            # Append
-            video_aligns.append((_video, _align))
-        return video_aligns
+    # @staticmethod
+    # def split_words(video, align):
+    #     video_aligns = []
+    #     for sub in align.align:
+    #         # Create new video
+    #         _video = Video(video.vtype, video.face_predictor_path)
+    #         _video.face = video.face[sub[0]:sub[1]]
+    #         _video.mouth = video.mouth[sub[0]:sub[1]]
+    #         _video.set_data(_video.mouth)
+    #         # Create new align
+    #         _align = Align(align.absolute_max_string_len, align.label_func).from_array([(0, sub[1]-sub[0], sub[2])])
+    #         # Append
+    #         video_aligns.append((_video, _align))
+    #     return video_aligns
 
-    @staticmethod
-    def merge(video_aligns):
-        vsample = video_aligns[0][0]
-        asample = video_aligns[0][1]
-        video = Video(vsample.vtype, vsample.face_predictor_path)
-        video.face = np.ones((0, vsample.face.shape[1], vsample.face.shape[2], vsample.face.shape[3]), dtype=np.uint8)
-        video.mouth = np.ones((0, vsample.mouth.shape[1], vsample.mouth.shape[2], vsample.mouth.shape[3]), dtype=np.uint8)
-        align = []
-        inc = 0
-        for _video, _align in video_aligns:
-            video.face = np.concatenate((video.face, _video.face), 0)
-            video.mouth = np.concatenate((video.mouth, _video.mouth), 0)
-            for sub in _align.align:
-                _sub = (sub[0]+inc, sub[1]+inc, sub[2])
-                align.append(_sub)
-            inc = align[-1][1]
-        video.set_data(video.mouth)
-        align = Align(asample.absolute_max_string_len, asample.label_func).from_array(align)
-        return (video, align)
+    # @staticmethod
+    # def merge(video_aligns):
+    #     vsample = video_aligns[0][0]
+    #     asample = video_aligns[0][1]
+    #     video = Video(vsample.vtype, vsample.face_predictor_path)
+    #     video.face = np.ones((0, vsample.face.shape[1], vsample.face.shape[2], vsample.face.shape[3]), dtype=np.uint8)
+    #     video.mouth = np.ones((0, vsample.mouth.shape[1], vsample.mouth.shape[2], vsample.mouth.shape[3]), dtype=np.uint8)
+    #     align = []
+    #     inc = 0
+    #     for _video, _align in video_aligns:
+    #         video.face = np.concatenate((video.face, _video.face), 0)
+    #         video.mouth = np.concatenate((video.mouth, _video.mouth), 0)
+    #         for sub in _align.align:
+    #             _sub = (sub[0]+inc, sub[1]+inc, sub[2])
+    #             align.append(_sub)
+    #         inc = align[-1][1]
+    #     video.set_data(video.mouth)
+    #     align = Align(asample.absolute_max_string_len, asample.label_func).from_array(align)
+    #     return (video, align)
 
-    @staticmethod
-    def pick_subsentence(video, align, length):
-        split = VideoAugmenter.split_words(video, align)
-        start = np.random.randint(0, align.word_length - length)
-        return VideoAugmenter.merge(split[start:start+length])
+    # @staticmethod
+    # def pick_subsentence(video, align, length):
+    #     print('-------------------------')
+    #     print("pick_subsentence accessed")
+    #     print('-------------------------')
+    #     split = VideoAugmenter.split_words(video, align)
+    #     start = np.random.randint(0, align.word_length - length)
+    #     return VideoAugmenter.merge(split[start:start+length])
 
-    @staticmethod
-    def pick_word(video, align):
-        video_aligns = np.array(VideoAugmenter.split_words(video, align))
-        return video_aligns[np.random.randint(video_aligns.shape[0], size=2), :][0]
+    # @staticmethod
+    # def pick_word(video, align):
+    #     video_aligns = np.array(VideoAugmenter.split_words(video, align))
+    #     return video_aligns[np.random.randint(video_aligns.shape[0], size=2), :][0]
 
     @staticmethod
     def horizontal_flip(video):

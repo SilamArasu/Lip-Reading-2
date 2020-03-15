@@ -16,11 +16,20 @@ class Curriculum(object):
 
     def apply(self, video, align):
         original_video = video
-        if self.sentence_length > 0:
-            video, align = VideoAugmenter.pick_subsentence(video, align, self.sentence_length)
+        # if self.sentence_length > 0:
+        #     print('------------------')
+        #     print('Pick subsentence called')
+        #     print('------------------')
+        #     video, align = VideoAugmenter.pick_subsentence(video, align, self.sentence_length)
         # Only apply horizontal flip and temporal jitter on training
         if self.train:
+            # print('------------------')
+            # print('self.train')
+            # print('------------------')
             if np.random.ranf() < self.flip_probability:
+                # print('------------------')
+                # print('horizontal_flip')
+                # print('------------------')
                 video = VideoAugmenter.horizontal_flip(video)
             video = VideoAugmenter.temporal_jitter(video, self.jitter_probability)
         video_unpadded_length = video.length
