@@ -1,0 +1,2 @@
+if you ever encounter AttributeError: 'Curriculum' object has no attribute 'train' while training, rerun it code.
+Its some bug in mutiprocessing
