@@ -2,43 +2,29 @@ import numpy as np
 # from videos import VideoAugmenter
 from videos import Video
 
-class Curriculum(object):
-    def __init__(self, rules):
-        self.rules = rules
-        self.epoch = -1
+class KeyFrame():
+    def __init__(self):
+        self.sentence_length = -1
+        self.flip_probability = 0.5
+        self.jitter_probability = 0.05
 
-    def update(self, epoch, train=True):
-        self.epoch = epoch
-        self.train = train
-        current_rule = self.rules(self.epoch)
-        self.sentence_length = current_rule.get('sentence_length') or -1
-        self.flip_probability = current_rule.get('flip_probability') or 0.0
-        self.jitter_probability = current_rule.get('jitter_probability') or 0.0
+    # def update(self, epoch, train=True):
+    #     self.epoch = epoch
+    #     self.train = train
+    #     current_rule = self.rules(self.epoch)
+    #     self.sentence_length = current_rule.get('sentence_length') or -1
+    #     self.flip_probability = current_rule.get('flip_probability') or 0.0
+    #     self.jitter_probability = current_rule.get('jitter_probability') or 0.0
 
     def apply(self, video, align):
         original_video = video
-        # if self.sentence_length > 0:
-        #     print('------------------')
-        #     print('Pick subsentence called')
-        #     print('------------------')
-        #     video, align = VideoAugmenter.pick_subsentence(video, align, self.sentence_length)
-        # Only apply horizontal flip and temporal jitter on training
-        if self.train:
-            # print('------------------')
-            # print('self.train')
-            # print('------------------')
-            if np.random.ranf() < self.flip_probability:
-                # print('------------------')
-                # print('horizontal_flip')
-                # print('------------------')
-                video = self.horizontal_flip(video)
-            video = self.temporal_jitter(video, self.jitter_probability)
+        # if train:
+        if np.random.ranf() < self.flip_probability:
+            video = self.horizontal_flip(video)
+        video = self.temporal_jitter(video)
         video_unpadded_length = video.length
-        # t1 = video
         if video.length != original_video.length:
           video = self.pad(video, original_video.length)
-        # t2 = video
-        # print("before = {}, after = {}".format(type(t1),type(t2)))
         return video, align, video_unpadded_length
 
     def horizontal_flip(self, video):
@@ -48,13 +34,13 @@ class Curriculum(object):
         new_video.set_data(new_video.mouth)
         return new_video
 
-    def temporal_jitter(self, video, probability):
+    def temporal_jitter(self, video):
         changes = [] # [(frame_i, type=del/dup)]
         t = video.length
         for i in range(t):
-            if np.random.ranf() <= probability/2:
+            if np.random.ranf() <= self.jitter_probability/2:
                 changes.append((i, 'del'))
-            if probability/2 < np.random.ranf() <= probability:
+            if self.jitter_probability/2 < np.random.ranf() <= self.jitter_probability:
                 changes.append((i, 'dup'))
         new_face = np.copy(video.face)
         new_mouth = np.copy(video.mouth)

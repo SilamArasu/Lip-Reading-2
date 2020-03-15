@@ -12,6 +12,7 @@ import pickle
 import glob
 import multiprocessing
 import threading
+from keyframe import KeyFrame
 
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
@@ -57,7 +58,7 @@ class BasicGenerator(keras.callbacks.Callback):
         self.absolute_max_string_len = absolute_max_string_len
         self.cur_train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
         self.cur_val_index   = multiprocessing.Value('i', 0)
-        self.curriculum      = kwargs.get('curriculum', None)
+        self.keyframe      = KeyFrame()
         self.random_seed     = 17
         # self.vtype               = kwargs.get('vtype', 'mouth')
         # self.steps_per_epoch     = kwargs.get('steps_per_epoch', None)
@@ -151,8 +152,10 @@ class BasicGenerator(keras.callbacks.Callback):
             video = Video().from_frames(path)
             align = self.align_dict[path.split('/')[-1]]
             video_unpadded_length = video.length
-            if self.curriculum is not None:
-                video, align, video_unpadded_length = self.curriculum.apply(video, align)
+            # if self.curriculum is not None:
+            if train == True:
+                video, align, video_unpadded_length = self.keyframe.apply(video, align)
+
             X_data.append(video.data)
             Y_data.append(align.padded_label)
             label_length.append(align.label_length) # CHANGED [A] -> A, CHECK!
@@ -203,8 +206,8 @@ class BasicGenerator(keras.callbacks.Callback):
                 # print "GENERATOR EPOCH {}".format(self.process_train_epoch)
                 # print self.train_list[0]
             # print "PI: {}, SI: {}, SE: {}".format(cur_train_index, self.cur_train_index.value, self.shared_train_epoch.value)
-            if self.curriculum is not None and self.curriculum.epoch != self.process_train_epoch:
-                self.update_curriculum(self.process_train_epoch, train=True)
+            # if self.curriculum is not None and self.curriculum.epoch != self.process_train_epoch:
+            #     self.update_curriculum(self.process_train_epoch, train=True)
             # print "Train [{},{}] {}:{}".format(self.process_train_epoch, epoch_differences, cur_train_index,cur_train_index+self.minibatch_size)
             ret = self.get_batch(cur_train_index, self.minibatch_size, train=True)
             # if epoch_differences > 0:
@@ -221,8 +224,8 @@ class BasicGenerator(keras.callbacks.Callback):
                 self.cur_val_index.value += self.minibatch_size
                 if self.cur_val_index.value >= self.validation_size:
                     self.cur_val_index.value = self.cur_val_index.value % self.minibatch_size
-            if self.curriculum is not None and self.curriculum.epoch != self.process_epoch:
-                self.update_curriculum(self.process_epoch, train=False)
+            # if self.curriculum is not None and self.curriculum.epoch != self.process_epoch:
+            #     self.update_curriculum(self.process_epoch, train=False)
             # print "Val [{}] {}:{}".format(self.process_epoch, cur_val_index,cur_val_index+self.minibatch_size)
             ret = self.get_batch(cur_val_index, self.minibatch_size, train=False)
             yield ret
@@ -236,6 +239,6 @@ class BasicGenerator(keras.callbacks.Callback):
     def on_epoch_begin(self, epoch, logs={}):
         self.process_epoch = epoch
 
-    def update_curriculum(self, epoch, train=True):
-        self.curriculum.update(epoch, train=train)
-        print("Epoch {}: {}".format(epoch, self.curriculum))
+    # def update_curriculum(self, epoch, train=True):
+    #     self.curriculum.update(epoch, train=train)
+    #     print("Epoch {}: {}".format(epoch, self.curriculum))

@@ -48,7 +48,7 @@ def ascii_to_text(labels):
             text += ' '
     return text
 
-PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
+PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'grid.txt')
 spell = Spell(path=PREDICT_DICTIONARY)
 
 # def decode(y_pred, input_length, greedy, beam_width, top_paths):

@@ -8,10 +8,10 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, CSVLogger, ModelCheckpoint
 from generators import BasicGenerator
 from callbacks import Metrics
-from curriculums import Curriculum
+# from curriculums import Curriculum
 from decoders import Decoder
 #from helpers import labels_to_text
-from spell import Spell
+# from spell import Spell
 from model import LipNet
 import numpy as np
 import datetime
@@ -24,20 +24,19 @@ LOG_DIR      = os.path.join(CURRENT_PATH, 'logs')
 
 PREDICT_GREEDY      = False
 PREDICT_BEAM_WIDTH  = 200
-PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
+# PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
 
 
-def curriculum_rules(epoch):
-    return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }
+# def curriculum_rules(epoch):
+#     return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }
 
 
 def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, absolute_max_string_len, output_size,minibatch_size):
-    curriculum = Curriculum(curriculum_rules)
     lip_gen = BasicGenerator(dataset_path=DATASET_DIR,
                                 minibatch_size=minibatch_size,
                                 img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
                                 absolute_max_string_len=absolute_max_string_len,
-                                curriculum=curriculum, start_epoch=start_epoch).build()
+                                 start_epoch=start_epoch).build()
 
     lipnet = LipNet(img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
                             absolute_max_string_len=absolute_max_string_len, output_size=output_size)
@@ -53,7 +52,7 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
         weight_file = os.path.join(OUTPUT_DIR, os.path.join(run_name, 'weights%02d.h5' % (start_epoch - 1)))
         lipnet.model.load_weights(weight_file)
 
-    spell = Spell(path=PREDICT_DICTIONARY)
+    # spell = Spell(path=PREDICT_DICTIONARY)
     decoder = Decoder(greedy=PREDICT_GREEDY, beam_width=PREDICT_BEAM_WIDTH)
 
     try:
