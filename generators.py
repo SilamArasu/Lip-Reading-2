@@ -47,7 +47,7 @@ def get_list(l, index, size):
 # datasets/[train|val]/<sid>/<id>/<image>.png
 # or datasets/[train|val]/<sid>/<id>.mpg
 # datasets/align/<id>.align
-class BasicGenerator(keras.callbacks.Callback):
+class Generator(keras.callbacks.Callback):
     def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=32, **kwargs):
         self.dataset_path   = dataset_path
         self.minibatch_size = minibatch_size

@@ -5,6 +5,7 @@ import editdistance
 import keras
 import csv
 import os
+from decoders import Decoder
 
 def wer_sentence(r, h):
     return wer(r.split(), h.split())
@@ -59,16 +60,17 @@ def wer(r, h):
 
         return d[len(r)][len(h)]
 
+beam_width = 200
 
 class Metrics(keras.callbacks.Callback):
 
-    def __init__(self, model_container, generator, decoder, num_samples_stats, num_display_sentences, output_dir=None):
+    def __init__(self, model_container, generator, num_samples_stats, num_display_sentences, output_dir=None):
         self.model_container = model_container
         self.output_dir = output_dir
         self.generator = generator
         self.num_samples_stats = num_samples_stats
         self.num_display_sentences = num_display_sentences
-        self.decoder = decoder
+        self.decoder = Decoder(beam_width=beam_width)
         print("output directory is ",output_dir)
         if output_dir is not None and not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)

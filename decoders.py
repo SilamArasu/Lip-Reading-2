@@ -68,8 +68,8 @@ spell = Spell(path=PREDICT_DICTIONARY)
 #     return result
 
 class Decoder(object):
-    def __init__(self, greedy, beam_width):
-        self.greedy         = greedy
+    def __init__(self, beam_width):
+        self.greedy         = False
         self.beam_width     = beam_width
         self.top_paths      = 1
         # self.language_model = kwargs.get('language_model', None)
