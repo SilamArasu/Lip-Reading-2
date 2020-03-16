@@ -48,6 +48,8 @@ def get_list(l, index, size):
 # datasets/[train|val]/<sid>/<id>/<image>.png
 # or datasets/[train|val]/<sid>/<id>.mpg
 # datasets/align/<id>.align
+random_seed = 17
+
 class Generator(keras.callbacks.Callback):
     def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=32, **kwargs):
         self.dataset_path   = dataset_path
@@ -57,12 +59,16 @@ class Generator(keras.callbacks.Callback):
         self.img_h          = img_h
         self.frames_n       = frames_n
         self.absolute_max_string_len = absolute_max_string_len
-        self.cur_train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
-        self.cur_val_index   = multiprocessing.Value('i', 0)
-        self.shared_train_epoch  = multiprocessing.Value('i', -1)
+        self.train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
+        self.val_index   = multiprocessing.Value('i', 0)
+        self.train_epoch  = multiprocessing.Value('i', -1)
         self.process_epoch       = -1
         self.keyframe      = KeyFrame()
-        self.random_seed     = 17
+        self.train_path     = os.path.join(self.dataset_path, 'train')
+        self.val_path       = os.path.join(self.dataset_path, 'val')
+        self.align_path     = os.path.join(self.dataset_path, 'align')
+        self.build_dataset()
+        # self.random_seed     = 17
         # self.vtype               = kwargs.get('vtype', 'mouth')
         # self.steps_per_epoch     = kwargs.get('steps_per_epoch', None)
         # self.validation_steps    = kwargs.get('validation_steps', None)
@@ -79,18 +85,18 @@ class Generator(keras.callbacks.Callback):
         # self.process_train_index = -1
         # self.process_val_index   = -1
 
-    def build(self, **kwargs):
-        self.train_path     = os.path.join(self.dataset_path, 'train')
-        self.val_path       = os.path.join(self.dataset_path, 'val')
-        self.align_path     = os.path.join(self.dataset_path, 'align')
+    # def build(self):
+    #     self.train_path     = os.path.join(self.dataset_path, 'train')
+    #     self.val_path       = os.path.join(self.dataset_path, 'val')
+    #     self.align_path     = os.path.join(self.dataset_path, 'align')
          
-        self.build_dataset()
+    #     self.build_dataset()
 
-        # Set steps to dataset size if not set
+    #     # Set steps to dataset size if not set
         
-        # if self.steps_per_epoch is None else self.steps_per_epoch
-        # self.validation_steps = self.default_validation_steps if self.validation_steps is None else self.validation_steps
-        return self
+    #     # if self.steps_per_epoch is None else self.steps_per_epoch
+    #     # self.validation_steps = self.default_validation_steps if self.validation_steps is None else self.validation_steps
+    #     return self
 
     @property
     def training_size(self):
@@ -134,9 +140,9 @@ class Generator(keras.callbacks.Callback):
         self.val_list   = self.prepare_vidlist(os.path.join(self.val_path, '*', '*'))
         self.align_dict = self.prepare_align(self.train_list + self.val_list)
         self.steps_per_epoch  = self.default_training_steps
-        print("Found {} videos for training.".format(self.training_size))
-        print("Found {} videos for validation.".format(self.validation_size))
-        print("Steps per epoch ", int(self.steps_per_epoch))
+        print("Number of training videos = ", self.training_size)
+        print("Number of validation videos = ", self.validation_size)
+        print("Steps per epoch ", round(self.steps_per_epoch))
         print("")
 
         np.random.shuffle(self.train_list)
@@ -159,7 +165,7 @@ class Generator(keras.callbacks.Callback):
             # video_unpadded_length = video.length
             # if self.curriculum is not None:
             if train == True:
-                video, align = self.keyframe.apply(video, align)
+                video= self.keyframe.extract(video)
 
             X_data.append(video.data)
             Y_data.append(align.padded_label)
@@ -173,8 +179,7 @@ class Generator(keras.callbacks.Callback):
         input_length = np.array(input_length)
         Y_data = np.array(Y_data)
         X_data = np.array(X_data).astype(np.float32) / 255 # Normalize image data to [0,1], TODO: mean normalization over training data
-        X_data, Y_data, input_length, label_length, source_str = shuffle(X_data, Y_data, input_length, label_length, source_str, self.random_seed)
-
+        X_data, Y_data, input_length, label_length, source_str = shuffle(X_data, Y_data, input_length, label_length, source_str, random_state=random_seed)
 
         inputs = {'the_input': X_data,
                   'the_labels': Y_data,
@@ -183,29 +188,28 @@ class Generator(keras.callbacks.Callback):
                   'source_str': source_str  # used for visualization only
                   }
         outputs = {'ctc': np.zeros([size])}  # dummy data for dummy loss function coz while training in forward ctc is zero
-
         return (inputs, outputs)
 
     @threadsafe_generator
     def next_train(self):
-        r = np.random.RandomState(self.random_seed)
+        # r = np.random.RandomState(random_seed)
         while True:
-            # print "SI: {}, SE: {}".format(self.cur_train_index.value, self.shared_train_epoch.value)
-            with self.cur_train_index.get_lock(), self.shared_train_epoch.get_lock():
-                cur_train_index = self.cur_train_index.value
-                self.cur_train_index.value += self.minibatch_size
+            # print "SI: {}, SE: {}".format(self.train_index.value, self.train_epoch.value)
+            with self.train_index.get_lock(), self.train_epoch.get_lock():
+                train_index = self.train_index.value
+                self.train_index.value += self.minibatch_size
                 # Shared epoch increment on start or index >= training in epoch
-                if cur_train_index >= self.steps_per_epoch * self.minibatch_size:
-                    cur_train_index = 0
-                    self.shared_train_epoch.value += 1
-                    self.cur_train_index.value = self.minibatch_size
-                if self.shared_train_epoch.value < 0:
-                    self.shared_train_epoch.value = 0
+                if train_index >= self.steps_per_epoch * self.minibatch_size:
+                    train_index = 0
+                    self.train_epoch.value += 1
+                    self.train_index.value = self.minibatch_size
+                if self.train_epoch.value < 0:
+                    self.train_epoch.value = 0
                 # Shared index overflow
-                if self.cur_train_index.value >= self.training_size:
-                    self.cur_train_index.value = self.cur_train_index.value % self.minibatch_size
+                if self.train_index.value >= self.training_size:
+                    self.train_index.value = self.train_index.value % self.minibatch_size
                 # Calculate differences between process and shared epoch
-                # epoch_differences = self.shared_train_epoch.value - self.process_train_epoch
+                # epoch_differences = self.train_epoch.value - self.process_train_epoch
             # print("-------------------")
             # print("epoch_differences ",epoch_differences)
             # print("-------------------")
@@ -216,13 +220,13 @@ class Generator(keras.callbacks.Callback):
             #         r.shuffle(self.train_list) # Catch up
                 # print "GENERATOR EPOCH {}".format(self.process_train_epoch)
                 # print self.train_list[0]
-            # print "PI: {}, SI: {}, SE: {}".format(cur_train_index, self.cur_train_index.value, self.shared_train_epoch.value)
+            # print "PI: {}, SI: {}, SE: {}".format(train_index, self.train_index.value, self.train_epoch.value)
             # if self.curriculum is not None and self.curriculum.epoch != self.process_train_epoch:
             #     self.update_curriculum(self.process_train_epoch, train=True)
-            # print "Train [{},{}] {}:{}".format(self.process_train_epoch, epoch_differences, cur_train_index,cur_train_index+self.minibatch_size)
-            ret = self.get_batch(cur_train_index, self.minibatch_size, train=True)
+            # print "Train [{},{}] {}:{}".format(self.process_train_epoch, epoch_differences, train_index,train_index+self.minibatch_size)
+            ret = self.get_batch(train_index, self.minibatch_size, train=True)
             # if epoch_differences > 0:
-            #     print "GENERATOR EPOCH {} - {}:{}".format(self.process_train_epoch, cur_train_index, cur_train_index + self.minibatch_size)
+            #     print "GENERATOR EPOCH {} - {}:{}".format(self.process_train_epoch, train_index, train_index + self.minibatch_size)
             #     print ret[0]['source_str']
             #     print "-------------------"
             yield ret
@@ -230,22 +234,22 @@ class Generator(keras.callbacks.Callback):
     @threadsafe_generator
     def next_val(self):
         while True:
-            with self.cur_val_index.get_lock():
-                cur_val_index = self.cur_val_index.value
-                self.cur_val_index.value += self.minibatch_size
-                if self.cur_val_index.value >= self.validation_size:
-                    self.cur_val_index.value = self.cur_val_index.value % self.minibatch_size
+            with self.val_index.get_lock():
+                val_index = self.val_index.value
+                self.val_index.value += self.minibatch_size
+                if self.val_index.value >= self.validation_size:
+                    self.val_index.value = self.val_index.value % self.minibatch_size
             # if self.curriculum is not None and self.curriculum.epoch != self.process_epoch:
             #     self.update_curriculum(self.process_epoch, train=False)
-            # print "Val [{}] {}:{}".format(self.process_epoch, cur_val_index,cur_val_index+self.minibatch_size)
-            ret = self.get_batch(cur_val_index, self.minibatch_size, train=False)
+            # print "Val [{}] {}:{}".format(self.process_epoch, val_index,val_index+self.minibatch_size)
+            ret = self.get_batch(val_index, self.minibatch_size, train=False)
             yield ret
 
     def on_train_begin(self, logs={}):
-        with self.cur_train_index.get_lock():
-            self.cur_train_index.value = 0
-        with self.cur_val_index.get_lock():
-            self.cur_val_index.value = 0
+        with self.train_index.get_lock():
+            self.train_index.value = 0
+        with self.val_index.get_lock():
+            self.val_index.value = 0
 
     def on_epoch_begin(self, epoch, logs={}):
         self.process_epoch = epoch

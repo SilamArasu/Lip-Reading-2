@@ -32,11 +32,11 @@ beam_width  = 200
 
 
 def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, absolute_max_string_len, output_size,minibatch_size):
+    
     gen = Generator(dataset_path=DATASET_DIR,
                                 minibatch_size=minibatch_size,
                                 img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
-                                absolute_max_string_len=absolute_max_string_len,
-                                 start_epoch=start_epoch).build()
+                                absolute_max_string_len=absolute_max_string_len).build()
 
     net = Network(img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
                             absolute_max_string_len=absolute_max_string_len, output_size=output_size)

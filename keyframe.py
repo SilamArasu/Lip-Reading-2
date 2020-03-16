@@ -16,7 +16,7 @@ class KeyFrame():
     #     self.flip_probability = current_rule.get('flip_probability') or 0.0
     #     self.jitter_probability = current_rule.get('jitter_probability') or 0.0
 
-    def apply(self, video, align):
+    def extract(self, video):
         original_video_length = video.length
         # if train:
         if np.random.ranf() < self.flip_probability:
@@ -25,7 +25,7 @@ class KeyFrame():
         video_unpadded_length = video.length
         if video.length != original_video_length:
           video = self.pad(video, original_video_length)
-        return video, align
+        return video
 
     def horizontal_flip(self, video):
         new_video = Video(video.vtype, video.face_predictor_path)
