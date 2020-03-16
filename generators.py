@@ -13,6 +13,7 @@ import glob
 import multiprocessing
 import threading
 from keyframe import KeyFrame
+from sklearn.utils import shuffle
 
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
@@ -58,6 +59,8 @@ class Generator(keras.callbacks.Callback):
         self.absolute_max_string_len = absolute_max_string_len
         self.cur_train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
         self.cur_val_index   = multiprocessing.Value('i', 0)
+        self.shared_train_epoch  = multiprocessing.Value('i', -1)
+        self.process_epoch       = -1
         self.keyframe      = KeyFrame()
         self.random_seed     = 17
         # self.vtype               = kwargs.get('vtype', 'mouth')
@@ -66,24 +69,25 @@ class Generator(keras.callbacks.Callback):
         # Process epoch is used by non-training generator (e.g: validation)
         # because each epoch uses different validation data enqueuer
         # Will be updated on epoch_begin
-        self.process_epoch       = -1
         # Maintain separate process train epoch because fit_generator only use
         # one enqueuer for the entire training, training enqueuer can contain
         # max_q_size batch data ahead than the current batch data which might be
         # in the epoch different with current actual epoch
         # Will be updated on next_train()
-        self.shared_train_epoch  = multiprocessing.Value('i', -1)
-        self.process_train_epoch = -1
-        self.process_train_index = -1
-        self.process_val_index   = -1
+        
+        # self.process_train_epoch = -1
+        # self.process_train_index = -1
+        # self.process_val_index   = -1
 
     def build(self, **kwargs):
         self.train_path     = os.path.join(self.dataset_path, 'train')
         self.val_path       = os.path.join(self.dataset_path, 'val')
         self.align_path     = os.path.join(self.dataset_path, 'align')
+         
         self.build_dataset()
+
         # Set steps to dataset size if not set
-        self.steps_per_epoch  = self.default_training_steps 
+        
         # if self.steps_per_epoch is None else self.steps_per_epoch
         # self.validation_steps = self.default_validation_steps if self.validation_steps is None else self.validation_steps
         return self
@@ -129,9 +133,10 @@ class Generator(keras.callbacks.Callback):
         self.train_list = self.prepare_vidlist(os.path.join(self.train_path, '*', '*'))
         self.val_list   = self.prepare_vidlist(os.path.join(self.val_path, '*', '*'))
         self.align_dict = self.prepare_align(self.train_list + self.val_list)
-
+        self.steps_per_epoch  = self.default_training_steps
         print("Found {} videos for training.".format(self.training_size))
         print("Found {} videos for validation.".format(self.validation_size))
+        print("Steps per epoch ", int(self.steps_per_epoch))
         print("")
 
         np.random.shuffle(self.train_list)
@@ -151,10 +156,10 @@ class Generator(keras.callbacks.Callback):
         for path in X_data_path:
             video = Video().from_frames(path)
             align = self.align_dict[path.split('/')[-1]]
-            video_unpadded_length = video.length
+            # video_unpadded_length = video.length
             # if self.curriculum is not None:
             if train == True:
-                video, align, video_unpadded_length = self.keyframe.apply(video, align)
+                video, align = self.keyframe.apply(video, align)
 
             X_data.append(video.data)
             Y_data.append(align.padded_label)
@@ -168,6 +173,8 @@ class Generator(keras.callbacks.Callback):
         input_length = np.array(input_length)
         Y_data = np.array(Y_data)
         X_data = np.array(X_data).astype(np.float32) / 255 # Normalize image data to [0,1], TODO: mean normalization over training data
+        X_data, Y_data, input_length, label_length, source_str = shuffle(X_data, Y_data, input_length, label_length, source_str, self.random_seed)
+
 
         inputs = {'the_input': X_data,
                   'the_labels': Y_data,
@@ -182,7 +189,7 @@ class Generator(keras.callbacks.Callback):
     @threadsafe_generator
     def next_train(self):
         r = np.random.RandomState(self.random_seed)
-        while 1:
+        while True:
             # print "SI: {}, SE: {}".format(self.cur_train_index.value, self.shared_train_epoch.value)
             with self.cur_train_index.get_lock(), self.shared_train_epoch.get_lock():
                 cur_train_index = self.cur_train_index.value
@@ -193,16 +200,20 @@ class Generator(keras.callbacks.Callback):
                     self.shared_train_epoch.value += 1
                     self.cur_train_index.value = self.minibatch_size
                 if self.shared_train_epoch.value < 0:
-                    self.shared_train_epoch.value += 1
+                    self.shared_train_epoch.value = 0
                 # Shared index overflow
                 if self.cur_train_index.value >= self.training_size:
                     self.cur_train_index.value = self.cur_train_index.value % self.minibatch_size
                 # Calculate differences between process and shared epoch
-                epoch_differences = self.shared_train_epoch.value - self.process_train_epoch
-            if epoch_differences > 0:
-                self.process_train_epoch += epoch_differences
-                for i in range(epoch_differences):
-                    r.shuffle(self.train_list) # Catch up
+                # epoch_differences = self.shared_train_epoch.value - self.process_train_epoch
+            # print("-------------------")
+            # print("epoch_differences ",epoch_differences)
+            # print("-------------------")
+            # r.shuffle(self.train_list)
+            # if epoch_differences > 0:
+            #     self.process_train_epoch += epoch_differences
+            #     for i in range(epoch_differences):
+            #         r.shuffle(self.train_list) # Catch up
                 # print "GENERATOR EPOCH {}".format(self.process_train_epoch)
                 # print self.train_list[0]
             # print "PI: {}, SI: {}, SE: {}".format(cur_train_index, self.cur_train_index.value, self.shared_train_epoch.value)
@@ -218,7 +229,7 @@ class Generator(keras.callbacks.Callback):
 
     @threadsafe_generator
     def next_val(self):
-        while 1:
+        while True:
             with self.cur_val_index.get_lock():
                 cur_val_index = self.cur_val_index.value
                 self.cur_val_index.value += self.minibatch_size

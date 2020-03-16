@@ -17,15 +17,15 @@ class KeyFrame():
     #     self.jitter_probability = current_rule.get('jitter_probability') or 0.0
 
     def apply(self, video, align):
-        original_video = video
+        original_video_length = video.length
         # if train:
         if np.random.ranf() < self.flip_probability:
             video = self.horizontal_flip(video)
         video = self.temporal_jitter(video)
         video_unpadded_length = video.length
-        if video.length != original_video.length:
-          video = self.pad(video, original_video.length)
-        return video, align, video_unpadded_length
+        if video.length != original_video_length:
+          video = self.pad(video, original_video_length)
+        return video, align
 
     def horizontal_flip(self, video):
         new_video = Video(video.vtype, video.face_predictor_path)
