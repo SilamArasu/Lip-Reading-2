@@ -11,45 +11,41 @@ import dlib
 from aligns import Align
 
 class Video(object):
-    def __init__(self, vtype='mouth', face_predictor_path=None):
-        if vtype == 'face' and face_predictor_path is None:
-            raise AttributeError('Face video need to be accompanied with face predictor')
+    def __init__(self, face_predictor_path=None):
+        # if vtype == 'face' and face_predictor_path is None:
+        #     raise AttributeError('Face video need to be accompanied with face predictor')
         self.face_predictor_path = face_predictor_path
-        self.vtype = vtype
+        # self.vtype = vtype
 
     def from_frames(self, path):
         frames_path = sorted([os.path.join(path, x) for x in os.listdir(path)])
         frames = [ndimage.imread(frame_path) for frame_path in frames_path]
-        self.handle_type(frames)
+        self.process_frames_mouth(frames)
         return self
 
     def from_video(self, path):
         frames = self.get_video_frames(path)
-        self.handle_type(frames)
+        self.process_frames_mouth(frames)
         return self
 
-    def from_array(self, frames):
-        self.handle_type(frames)
-        return self
+    # def handle_type(self, frames):
+    #     if self.vtype == 'mouth':
+    #         self.process_frames_mouth(frames)
+    #     elif self.vtype == 'face':
+    #         self.process_frames_face(frames)
+    #     else:
+    #         raise Exception('Video type not found')
 
-    def handle_type(self, frames):
-        if self.vtype == 'mouth':
-            self.process_frames_mouth(frames)
-        elif self.vtype == 'face':
-            self.process_frames_face(frames)
-        else:
-            raise Exception('Video type not found')
-
-    def process_frames_face(self, frames):
-        detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor(self.face_predictor_path)
-        mouth_frames = self.get_frames_mouth(detector, predictor, frames)
-        self.face = np.array(frames)
-        self.mouth = np.array(mouth_frames)
-        self.set_data(mouth_frames)
+    # def process_frames_face(self, frames):
+    #     detector = dlib.get_frontal_face_detector()
+    #     predictor = dlib.shape_predictor(self.face_predictor_path)
+    #     mouth_frames = self.get_frames_mouth(detector, predictor, frames)
+    #     self.face = np.array(frames)
+    #     self.mouth = np.array(mouth_frames)
+    #     self.set_data(mouth_frames)
 
     def process_frames_mouth(self, frames):
-        self.face = np.array(frames)
+        # self.face = np.array(frames)
         self.mouth = np.array(frames)
         self.set_data(frames)
 

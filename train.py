@@ -23,7 +23,7 @@ OUTPUT_DIR   = os.path.join(CURRENT_PATH, 'results')
 LOG_DIR      = os.path.join(CURRENT_PATH, 'logs')
 
 # PREDICT_GREEDY      = False
-beam_width  = 200
+# beam_width  = 200
 # PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
 
 

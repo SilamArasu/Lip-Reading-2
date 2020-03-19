@@ -3,7 +3,7 @@ import string
 from collections import Counter
 
 # from spell import Spell
-path = '/home/arasu/FYP/LipReadingGUI/Training/dictionaries/grid.txt'
+path = '/home/arasu/FYP/lipreading_code/Training/grid.txt'
 
 # Source: http://norvig.com/spell-correct.html (with some modifications)
 class Spell(object):

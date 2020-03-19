@@ -27,7 +27,7 @@ class Align(object):
         return self
 
     def build(self, align):
-        rem = ['sp','sil'] # Remove these
+        # rem = ['sp','sil'] # Remove these
         # self.align = [sub for sub in align if sub[2] not in rem]
         self.sentence = " ".join([y[-1] for y in align ])
         self.sentence = self.sentence.replace('sp','')

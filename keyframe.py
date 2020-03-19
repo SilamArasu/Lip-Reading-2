@@ -7,13 +7,12 @@ class KeyFrame(object):
 
     def extract(self, video):
         original_video_length = video.length
-        video = self.remove_redundant(video)
-        video_unpadded_length = video.length
+        video = self.retain_keyframes(video)
         if video.length != original_video_length:
           video = self.pad(video, original_video_length)
         return video
 
-    def remove_redundant(self, video):
+    def retain_keyframes(self, video):
         first = video.mouth[0]
         # diff_dict = dict()
         threshold = 300 
@@ -33,7 +32,7 @@ class KeyFrame(object):
             first = second
         new_mouth = np.array(new_mouth)
 
-        new_video = Video(video.vtype, video.face_predictor_path)
+        new_video = Video(video.face_predictor_path)
         new_video.mouth = new_mouth
         new_video.set_data(new_video.mouth)
         return new_video    
@@ -57,7 +56,7 @@ class KeyFrame(object):
         pad_length = max(length - video.length, 0)
         video_length = min(length, video.length)
         mouth_padding = np.zeros((pad_length, video.mouth.shape[1], video.mouth.shape[2], video.mouth.shape[3]), dtype=np.uint8)
-        new_video = Video(video.vtype, video.face_predictor_path)
+        new_video = Video(video.face_predictor_path)
         new_video.mouth = np.concatenate((video.mouth[0:video_length], mouth_padding), 0)
         new_video.set_data(new_video.mouth)
         return new_video    
