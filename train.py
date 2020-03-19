@@ -8,10 +8,6 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, CSVLogger, ModelCheckpoint
 from generators import Generator
 from callbacks import Metrics
-# from curriculums import Curriculum
-# from decoders import Decoder
-#from helpers import labels_to_text
-# from spell import Spell
 from model import Network
 import numpy as np
 import datetime
@@ -21,15 +17,6 @@ np.random.seed(34)
 DATASET_DIR  = os.path.join(CURRENT_PATH, 'datasets')
 OUTPUT_DIR   = os.path.join(CURRENT_PATH, 'results')
 LOG_DIR      = os.path.join(CURRENT_PATH, 'logs')
-
-# PREDICT_GREEDY      = False
-# beam_width  = 200
-# PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'dictionaries','grid.txt')
-
-
-# def curriculum_rules(epoch):
-#     return { 'sentence_length': -1, 'flip_probability': 0.5, 'jitter_probability': 0.05 }
-
 
 def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, absolute_max_string_len, output_size,minibatch_size):
     
@@ -52,19 +39,12 @@ def train(run_name, start_epoch, stop_epoch, img_c, img_w, img_h, frames_n, abso
         weight_file = os.path.join(OUTPUT_DIR, os.path.join(run_name, 'weights%02d.h5' % (start_epoch - 1)))
         net.model.load_weights(weight_file)
 
-    # spell = Spell(path=PREDICT_DICTIONARY)
-    # decoder = Decoder(beam_width=beam_width)
-
     try:
         os.makedirs(os.path.join(LOG_DIR, run_name), exist_ok=True)
     except:
         pass
 
-    # define callbacks
-                    # model_container, generator,          decoder, num_samples_stats=256, num_display_sentences=10, output_dir=None
     metrics  = Metrics(net, gen.next_val(), 100, minibatch_size, os.path.join(OUTPUT_DIR, run_name))
-    # visualize   =  Visualize(net, lip_gen.next_val(), decoder, minibatch_size, output_dir=os.path.join(OUTPUT_DIR, run_name))
-    # tensorboard = TensorBoard(log_dir=os.path.join(LOG_DIR, run_name))
     csv_logger  = CSVLogger(os.path.join(LOG_DIR, "{}-{}.csv".format('training',run_name)), separator=',', append=True)
     checkpoint  = ModelCheckpoint(os.path.join(OUTPUT_DIR, run_name, "weights{epoch:02d}.h5"), monitor='val_loss', save_weights_only=True, mode='auto', period=1)
 

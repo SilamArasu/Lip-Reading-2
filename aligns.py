@@ -27,8 +27,6 @@ class Align(object):
         return self
 
     def build(self, align):
-        # rem = ['sp','sil'] # Remove these
-        # self.align = [sub for sub in align if sub[2] not in rem]
         self.sentence = " ".join([y[-1] for y in align ])
         self.sentence = self.sentence.replace('sp','')
         self.sentence = self.sentence.replace('sil','')
@@ -38,8 +36,6 @@ class Align(object):
         self.padded_label = self.get_padded_label(self.label)
 
     def get_padded_label(self, label):
-        # print("Absolute max string length ",self.absolute_max_string_len)
-        # print("length label ",len(label))
         padding = np.ones((self.absolute_max_string_len-len(label))) * -1
         return np.concatenate((np.array(label), padding), axis=0)
 

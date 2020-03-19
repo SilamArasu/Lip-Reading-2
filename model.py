@@ -6,7 +6,6 @@ from keras.layers.recurrent import GRU
 from keras.layers.normalization import BatchNormalization
 from keras.layers import Input
 from keras.models import Model
-#from layers import CTC
 from keras import backend as K
 
 def ctc_lambda_func(args):
@@ -37,9 +36,6 @@ class Network(object):
         self.build()
 
     def build(self):
-        # if K.image_data_format() == 'channels_first':
-        #     input_shape = (self.img_c, self.frames_n, self.img_w, self.img_h)
-        # else:
         input_shape = (self.frames_n, self.img_w, self.img_h, self.img_c)
 
         self.input_data = Input(name='the_input', shape=input_shape, dtype='float32')

@@ -1,4 +1,3 @@
-#from wer import wer_sentence
 from nltk.translate import bleu_score
 import numpy as np
 import editdistance
@@ -11,33 +10,6 @@ def wer_sentence(r, h):
     return wer(r.split(), h.split())
 
 def wer(r, h):
-        """
-        Source: https://martin-thoma.com/word-error-rate-calculation/
-
-        Calculation of WER with Levenshtein distance.
-
-        Works only for iterables up to 254 elements (uint8).
-        O(nm) time ans space complexity.
-
-        Parameters
-        ----------
-        r : list
-        h : list
-
-        Returns
-        -------
-        int
-
-        Examples
-        --------
-        >>> wer("who is there".split(), "is there".split())
-        1
-        >>> wer("who is there".split(), "".split())
-        3
-        >>> wer("".split(), "who is there".split())
-        3
-        """
-        # initialisation
         d = np.zeros((len(r)+1)*(len(h)+1), dtype=np.uint8)
         d = d.reshape((len(r)+1, len(h)+1))
         for i in range(len(r)+1):
@@ -47,7 +19,6 @@ def wer(r, h):
                 elif j == 0:
                     d[i][0] = i
 
-        # computation
         for i in range(1, len(r)+1):
             for j in range(1, len(h)+1):
                 if r[i-1] == h[j-1]:
@@ -74,8 +45,6 @@ class Metrics(keras.callbacks.Callback):
         print("output directory is ",output_dir)
         if output_dir is not None and not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-
-    
     
     def get_statistics(self, num):
         num_left = num
@@ -145,7 +114,6 @@ class Metrics(keras.callbacks.Callback):
                                "{0:.5f}".format(stats['wer'][0]), "{0:.5f}".format(stats['wer'][1]),
                                "{0:.5f}".format(stats['bleu'][0]), "{0:.5f}".format(stats['bleu'][1])])
 
-        #visualize
         output_batch = next(self.generator)[0]
 
         y_pred       = self.model_container.predict(output_batch['the_input'][0:self.num_display_sentences])

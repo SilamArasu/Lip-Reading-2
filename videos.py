@@ -3,7 +3,6 @@ CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, CURRENT_PATH)
 
 import numpy as np
-# from keras import backend as K
 from scipy import ndimage
 from scipy.misc import imresize
 import skvideo.io
@@ -12,10 +11,7 @@ from aligns import Align
 
 class Video(object):
     def __init__(self, face_predictor_path=None):
-        # if vtype == 'face' and face_predictor_path is None:
-        #     raise AttributeError('Face video need to be accompanied with face predictor')
         self.face_predictor_path = face_predictor_path
-        # self.vtype = vtype
 
     def from_frames(self, path):
         frames_path = sorted([os.path.join(path, x) for x in os.listdir(path)])
@@ -28,24 +24,7 @@ class Video(object):
         self.process_frames_mouth(frames)
         return self
 
-    # def handle_type(self, frames):
-    #     if self.vtype == 'mouth':
-    #         self.process_frames_mouth(frames)
-    #     elif self.vtype == 'face':
-    #         self.process_frames_face(frames)
-    #     else:
-    #         raise Exception('Video type not found')
-
-    # def process_frames_face(self, frames):
-    #     detector = dlib.get_frontal_face_detector()
-    #     predictor = dlib.shape_predictor(self.face_predictor_path)
-    #     mouth_frames = self.get_frames_mouth(detector, predictor, frames)
-    #     self.face = np.array(frames)
-    #     self.mouth = np.array(mouth_frames)
-    #     self.set_data(mouth_frames)
-
     def process_frames_mouth(self, frames):
-        # self.face = np.array(frames)
         self.mouth = np.array(frames)
         self.set_data(frames)
 
@@ -103,12 +82,9 @@ class Video(object):
         data_frames = []
         for frame in frames:
             frame = frame.swapaxes(0,1) # swap width and height to form format W x H x C
-            if len(frame.shape) < 3: # Remove this at the end coz the frames are color by default
-                frame = np.array([frame]).swapaxes(0,2).swapaxes(0,1) # Add grayscale channel
+
             data_frames.append(frame)
         frames_n = len(data_frames)
         data_frames = np.array(data_frames) # T x W x H x C
-        # if K.image_data_format() == 'channels_first':
-        #     data_frames = np.rollaxis(data_frames, 3) # C x T x W x H
         self.data = data_frames
         self.length = frames_n

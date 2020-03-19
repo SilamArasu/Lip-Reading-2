@@ -1,7 +1,5 @@
 import numpy as np
-# from videos import VideoAugmenter
 from videos import Video
-
 
 class KeyFrame(object):
 
@@ -14,7 +12,6 @@ class KeyFrame(object):
 
     def retain_keyframes(self, video):
         first = video.mouth[0]
-        # diff_dict = dict()
         threshold = 300 
         res = None
         org_index = 0
@@ -28,7 +25,6 @@ class KeyFrame(object):
             if diff > threshold:
                 new_mouth.append(second)
             org_index += 1
-            # diff_dict[filename+1] = diff
             first = second
         new_mouth = np.array(new_mouth)
 
@@ -36,7 +32,6 @@ class KeyFrame(object):
         new_video.mouth = new_mouth
         new_video.set_data(new_video.mouth)
         return new_video    
-
 
     def tobw(self,img):
         img = img.dot([0.07, 0.72, 0.21])
