@@ -3,7 +3,7 @@ CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, CURRENT_PATH)
 
 import numpy as np
-from keras import backend as K
+# from keras import backend as K
 from scipy import ndimage
 from scipy.misc import imresize
 import skvideo.io

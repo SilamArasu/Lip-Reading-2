@@ -51,7 +51,7 @@ def get_list(l, index, size):
 random_seed = 17
 
 class Generator(keras.callbacks.Callback):
-    def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=32, **kwargs):
+    def __init__(self, dataset_path, minibatch_size, img_c, img_w, img_h, frames_n, absolute_max_string_len=32):
         self.dataset_path   = dataset_path
         self.minibatch_size = minibatch_size
         self.img_c          = img_c
@@ -62,8 +62,8 @@ class Generator(keras.callbacks.Callback):
         self.train_index = multiprocessing.Value('i', 0)    # Data can be stored in a shared memory using Value
         self.val_index   = multiprocessing.Value('i', 0)
         self.train_epoch  = multiprocessing.Value('i', -1)
-        self.process_epoch       = -1
-        self.keyframe      = KeyFrame()
+        # self.process_epoch       = -1
+        self.keyframe       = KeyFrame()
         self.train_path     = os.path.join(self.dataset_path, 'train')
         self.val_path       = os.path.join(self.dataset_path, 'val')
         self.align_path     = os.path.join(self.dataset_path, 'align')
@@ -251,8 +251,8 @@ class Generator(keras.callbacks.Callback):
         with self.val_index.get_lock():
             self.val_index.value = 0
 
-    def on_epoch_begin(self, epoch, logs={}):
-        self.process_epoch = epoch
+    # def on_epoch_begin(self, epoch, logs={}):
+    #     self.process_epoch = epoch
 
     # def update_curriculum(self, epoch, train=True):
     #     self.curriculum.update(epoch, train=train)

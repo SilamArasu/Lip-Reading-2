@@ -2,84 +2,63 @@ import numpy as np
 # from videos import VideoAugmenter
 from videos import Video
 
-class KeyFrame():
-    def __init__(self):
-        self.sentence_length = -1
-        self.flip_probability = 0.5
-        self.jitter_probability = 0.05
 
-    # def update(self, epoch, train=True):
-    #     self.epoch = epoch
-    #     self.train = train
-    #     current_rule = self.rules(self.epoch)
-    #     self.sentence_length = current_rule.get('sentence_length') or -1
-    #     self.flip_probability = current_rule.get('flip_probability') or 0.0
-    #     self.jitter_probability = current_rule.get('jitter_probability') or 0.0
+class KeyFrame(object):
 
     def extract(self, video):
         original_video_length = video.length
-        # if train:
-        if np.random.ranf() < self.flip_probability:
-            video = self.horizontal_flip(video)
-        video = self.temporal_jitter(video)
+        video = self.remove_redundant(video)
         video_unpadded_length = video.length
         if video.length != original_video_length:
           video = self.pad(video, original_video_length)
         return video
 
-    def horizontal_flip(self, video):
-        new_video = Video(video.vtype, video.face_predictor_path)
-        new_video.face = np.flip(video.face, 2)
-        new_video.mouth = np.flip(video.mouth, 2)
-        new_video.set_data(new_video.mouth)
-        return new_video
+    def remove_redundant(self, video):
+        first = video.mouth[0]
+        # diff_dict = dict()
+        threshold = 300 
+        res = None
+        org_index = 0
+        new_mouth = []
+        new_mouth.append(first)
+        for index in range(len(video.mouth)-1):
+            second = video.mouth[index+1]
+            filename = index + 1
+            res = self.find_diff(first, second)
+            diff = np.count_nonzero(res)
+            if diff > threshold:
+                new_mouth.append(second)
+            org_index += 1
+            # diff_dict[filename+1] = diff
+            first = second
+        new_mouth = np.array(new_mouth)
 
-    def temporal_jitter(self, video):
-        changes = [] # [(frame_i, type=del/dup)]
-        t = video.length
-        for i in range(t):
-            if np.random.ranf() <= self.jitter_probability/2:
-                changes.append((i, 'del'))
-            if self.jitter_probability/2 < np.random.ranf() <= self.jitter_probability:
-                changes.append((i, 'dup'))
-        new_face = np.copy(video.face)
-        new_mouth = np.copy(video.mouth)
-        pos = 0
-        for change in changes:
-            actual_pos = change[0] + pos
-            if change[1] == 'dup':
-                new_face = np.insert(new_face, actual_pos, new_face[actual_pos], 0)
-                new_mouth = np.insert(new_mouth, actual_pos, new_mouth[actual_pos], 0)
-                pos = pos + 1
-            else:
-                new_face = np.delete(new_face, actual_pos, 0)
-                new_mouth = np.delete(new_mouth, actual_pos, 0)
-                pos = pos - 1
         new_video = Video(video.vtype, video.face_predictor_path)
-        new_video.face = new_face
         new_video.mouth = new_mouth
         new_video.set_data(new_video.mouth)
         return new_video    
 
+
+    def tobw(self,img):
+        img = img.dot([0.07, 0.72, 0.21])
+        i = 0
+        while i <= 256:
+            img[(img>i-16)*(img<i)] = i
+            i += 16
+        return img
+
+    def find_diff(self,img1,img2):
+        img1 = self.tobw(img1)
+        img2 = self.tobw(img2)
+        subt = np.fabs(np.subtract(img1,img2))      
+        return subt
+        
     def pad(self, video, length):
         pad_length = max(length - video.length, 0)
-        # if pad_length == 0:
-        #     # print("--------------")
-        #     # print("Here pad = 0, video type ",type(video))
-        #     return video
-        # else:
-        #     print("--------------")
-        #     print("Here pad = 0, video type ",type(video))
         video_length = min(length, video.length)
-        face_padding = np.zeros((pad_length, video.face.shape[1], video.face.shape[2], video.face.shape[3]), dtype=np.uint8)
         mouth_padding = np.zeros((pad_length, video.mouth.shape[1], video.mouth.shape[2], video.mouth.shape[3]), dtype=np.uint8)
         new_video = Video(video.vtype, video.face_predictor_path)
-        new_video.face = np.concatenate((video.face[0:video_length], face_padding), 0)
         new_video.mouth = np.concatenate((video.mouth[0:video_length], mouth_padding), 0)
         new_video.set_data(new_video.mouth)
         return new_video    
-
-    def __str__(self):
-        return "{}(train: {}, sentence_length: {}, flip_probability: {}, jitter_probability: {})"\
-            .format(self.__class__.__name__, self.train, self.sentence_length, self.flip_probability, self.jitter_probability)
     
