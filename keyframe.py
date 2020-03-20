@@ -34,6 +34,10 @@ class KeyFrame(object):
         return new_video    
 
     def tobw(self,img):
+        """A pixel has values 0-255. Here we assign values to each range of 16 as some sort of normalisation.
+        Like, 0-15 = 0
+              16-31 = 16 ,...
+        """
         img = img.dot([0.07, 0.72, 0.21])
         i = 0
         while i <= 256:
