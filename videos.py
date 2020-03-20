@@ -19,14 +19,23 @@ class Video(object):
         self.process_frames_mouth(frames)
         return self
 
-    def from_video(self, path):
-        frames = self.get_video_frames(path)
-        self.process_frames_mouth(frames)
-        return self
-
     def process_frames_mouth(self, frames):
         self.mouth = np.array(frames)
         self.set_data(frames)
+
+    def from_video(self, path):
+        frames = self.get_video_frames(path)
+        self.process_frames_face(frames)
+        return self
+
+    def process_frames_face(self, frames):
+        detector = dlib.get_frontal_face_detector()
+        predictor = dlib.shape_predictor(self.face_predictor_path)
+        mouth_frames = self.get_frames_mouth(detector, predictor, frames)
+        self.mouth = np.array(mouth_frames)
+        self.set_data(mouth_frames)
+
+
 
     def get_frames_mouth(self, detector, predictor, frames):
         MOUTH_WIDTH = 100
