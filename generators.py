@@ -13,6 +13,8 @@ import multiprocessing
 import threading
 from keyframe import KeyFrame
 from sklearn.utils import shuffle
+import random
+from vidaug import select_augmentation
 
 class threadsafe_iter:
     def __init__(self, it):
@@ -126,6 +128,7 @@ class Generator(keras.callbacks.Callback):
             align = self.align_dict[path.split('/')[-1]]
             if train == True:
                 video= self.keyframe.extract(video)
+                video.data = select_augmentation(video.data)
 
             X_data.append(video.data)
             Y_data.append(align.padded_label)
