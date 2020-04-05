@@ -40,8 +40,8 @@ class KeyFrame(object):
         """
         img = img.dot([0.07, 0.72, 0.21])
         i = 0
-        while i <= 256:
-            img[(img>i-16)*(img<i)] = i
+        while i < 256:
+            img[(img>i-16)*(img<i)] = i+8
             i += 16
         return img
 
