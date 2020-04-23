@@ -20,12 +20,12 @@ spell = Spell(path=PREDICT_DICTIONARY)
 
 class Decoder(object):
     def __init__(self, beam_width):
-        self.greedy         = False
+#        self.greedy         = False
         self.beam_width     = beam_width
-        self.top_paths      = 1
+#        self.top_paths      = 1
 
     def decode(self, y_pred, input_length):
-        decoded = K.ctc_decode(y_pred=y_pred, input_length=input_length, greedy=self.greedy, beam_width=self.beam_width, top_paths=self.top_paths)
+        decoded = K.ctc_decode(y_pred=y_pred, input_length=input_length, greedy=False, beam_width=self.beam_width)
         paths = [path.eval(session=K.get_session()) for path in decoded[0]]
         decoded = paths[0]
 
