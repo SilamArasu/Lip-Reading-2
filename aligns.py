@@ -36,7 +36,7 @@ class Align(object):
         self.padded_label = self.get_padded_label(self.label)
 
     def get_padded_label(self, label):
-        padding = np.ones((self.absolute_max_string_len-len(label))) * -1
+        padding = np.zeros((self.absolute_max_string_len-len(label)), dtype=int) 
         return np.concatenate((np.array(label), padding), axis=0)
 
     @property
