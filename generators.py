@@ -128,7 +128,9 @@ class Generator(keras.callbacks.Callback):
             align = self.align_dict[path.split('/')[-1]]
             if train == True:
                 video= self.keyframe.extract(video)
-                video.data = select_augmentation(video.data)
+                to_be_augmented = random.choice([True, False, False])]
+                if to_be_augmented:
+                    video.data = select_augmentation(video.data)
 
             X_data.append(video.data)
             Y_data.append(align.padded_label)
